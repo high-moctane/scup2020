@@ -71,11 +71,11 @@ func NewRL() (*RL, error) {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
-	agentDownDataPath, ok := os.LookupEnv("SCUP_RL_AGENT_UP_DATA_PATH")
+	agentDownDataPath, ok := os.LookupEnv("SCUP_RL_AGENT_DOWN_DATA_PATH")
 	if !ok {
 		return nil, fmt.Errorf("new rl failed: not found SCUP_RL_AGENT_DOWN_DATA_PATH")
 	}
-	if err := agentUp.Load(agentUpDataPath); err != nil && !errors.As(err, &agentDataNotFoundError) {
+	if err := agentDown.Load(agentDownDataPath); err != nil && !errors.As(err, &agentDataNotFoundError) {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
@@ -165,7 +165,7 @@ func (rl *RL) RunEpisodeUp(episode int) (returns float64, err error) {
 }
 
 func (rl *RL) RunEpisodeDown(episode int) (returns float64, err error) {
-	return rl.RunEpisode(episode, RLRunUp)
+	return rl.RunEpisode(episode, RLRunDown)
 }
 
 func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
