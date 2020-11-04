@@ -47,6 +47,7 @@ func main() {
 			log.Fatal(err)
 		}
 
+		fmt.Printf("rx %v: %v\n", n, rcvData)
 		fmt.Printf("rx %v: %v\n", n, rcvData.ToRRPState())
 	}
 }

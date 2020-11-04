@@ -141,6 +141,14 @@ func TestRRPReceiveData_rawEncoderToRad(t *testing.T) {
 			"1.57",
 		},
 		{
+			99999,
+			"3.14",
+		},
+		{
+			100001,
+			"-3.14",
+		},
+		{
 			175000,
 			"-0.79",
 		},

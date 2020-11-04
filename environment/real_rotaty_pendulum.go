@@ -3,6 +3,7 @@ package environment
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -93,12 +94,14 @@ func (rrp *RealRotatyPendulum) Init() error {
 }
 
 func (rrp *RealRotatyPendulum) Reset() error {
+	var rxError *RRPSerialRxError
+
 	log.Println("rrp reset start")
 
 	for {
 		if rrp.s != nil && math.Abs(rrp.s.BaseAngle) < RRPInitialBaseAngleRange {
 			rrp.RunStep([]float64{0})
-			log.Println("rrp reset end")
+			log.Println("rrp reset end", rrp.s)
 			return nil
 		}
 
@@ -108,6 +111,9 @@ func (rrp *RealRotatyPendulum) Reset() error {
 		}
 
 		if err := rrp.RunStep([]float64{direction * RRPResetInput}); err != nil {
+			if errors.As(err, &rxError) {
+				continue
+			}
 			return fmt.Errorf("reset error: %w", err)
 		}
 	}

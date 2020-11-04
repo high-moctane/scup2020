@@ -177,28 +177,25 @@ func (rl *RL) Run(mode int) error {
 }
 
 func (rl *RL) RunEpisodeUp(episode int) (returns float64, err error) {
-	return rl.RunEpisode(episode, RLRunUp)
+	log.Printf("up start episode %d", episode)
+	returns, err = rl.RunEpisode(episode, RLRunUp)
+	log.Printf("up end episode %d reward %v", episode, returns)
+	return
 }
 
 func (rl *RL) RunEpisodeDown(episode int) (returns float64, err error) {
-	return rl.RunEpisode(episode, RLRunDown)
+	log.Printf("down start episode %d", episode)
+	returns, err = rl.RunEpisode(episode, RLRunDown)
+	log.Printf("down end episode %d returns %v", episode, returns)
+	return
 }
 
 func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	// Reset
-	var rxError *environment.RRPSerialRxError
-	isReseted := false
-	for !isReseted {
-		if err = rl.env.Reset(); err != nil {
-			if errors.As(err, &rxError) {
-				continue
-			}
-			err = fmt.Errorf("rl run error: %w", err)
-			return
-		}
-		isReseted = true
+	if err = rl.env.Reset(); err != nil {
+		err = fmt.Errorf("rl run error: %w", err)
+		return
 	}
-	fmt.Println("powa")
 
 	// Init
 	var ag agent.Agent
@@ -231,11 +228,11 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 
 	// Run
 	// logger.Get().Info("rl start episode %d", episode)
-	log.Printf("rl start: episode %d", episode)
 
 	var isFinish bool
 
 	for step := 0; step == -1 || step < maxStep; step++ {
+		var rxError *environment.RRPSerialRxError
 		if err = rl.env.RunStep(a1); err != nil {
 			if errors.As(err, &rxError) {
 				continue
@@ -268,7 +265,6 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 		returns += r
 	}
 
-	// logger.Get().Info("rl end episode %d with returns %v", episode, returns)
 	log.Printf("rl end: episode %d, returns %v", episode, returns)
 
 	// Save
