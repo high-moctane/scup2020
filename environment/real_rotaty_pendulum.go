@@ -4,44 +4,186 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	_ "github.com/tarm/serial"
 	"math"
+	"time"
+
+	"github.com/high-moctane/lab_scup2020/utils"
+	"github.com/tarm/serial"
 )
 
 const RRPResetInput = 0.25
+const RRPInitialBaseAngleRange = math.Pi / 32
+const RRPMaxBaseAngleRange = math.Pi
+const RRPMaxTopPendulumAngleRange = math.Pi / 32
+const RRPMaxTopPendulumVelocityRange = 10
 
-// type RealRotatyPendulum struct {
-// 	seri *serial.Port
-//
-// 	s, sPrev RRPReceiveData
-// }
+type RRPSerialTxError struct {
+	n int
+}
 
-// func (rrp *RealRotatyPendulum) Init() error {
-// 	serialConf := serial.Config{
-// 		Name: "/dev/ttyAMA0",
-// 		Baud: 57600,
-// 	}
-// 	seri, err := serial.OpenPort(&serialConf)
-// 	if err != nil {
-// 		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
-// 	}
-//
-// 	rrp.seri = seri
-//
-// 	return nil
-// }
+func NewRRPSerialTxError(n int) *RRPSerialTxError {
+	return &RRPSerialTxError{n}
+}
 
-// func (rrp *RealRotatyPendulum) Reset() error {}
+func (e *RRPSerialTxError) Error() string {
+	return fmt.Sprintf("tx data len must be %d, but %d", RRPSendDataLen, e.n)
+}
 
-// func (rrp *RealRotatyPendulum) State() (s []float64, err error) {}
+type RRPSerialRxError struct {
+	n int
+}
 
-// func (rrp *RealRotatyPendulum) RunStep(a []float64) error {}
+func NewRRPSerialRxError(n int) *RRPSerialRxError {
+	return &RRPSerialRxError{n}
+}
 
-// func (rrp *RealRotatyPendulum) IsFinish(s []float64) (bool, error) {}
+func (e *RRPSerialRxError) Error() string {
+	return fmt.Sprintf("rx data len must be %d, but %d", RRPEncodedReceiveDataLen, e.n)
+}
 
-// func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {}
+type RealRotatyPendulum struct {
+	seri *serial.Port
 
-// func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {}
+	dt time.Duration
+
+	s, sPrev *RRPState
+
+	badReward float64
+}
+
+func (rrp *RealRotatyPendulum) Init() error {
+	serialConf := serial.Config{
+		Name: "/dev/ttyAMA0",
+		Baud: 57600,
+	}
+	seri, err := serial.OpenPort(&serialConf)
+	if err != nil {
+		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
+	}
+
+	dtRaw, err := utils.GetEnvInt("SCUP_RRP_DT")
+	if err != nil {
+		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
+	}
+	dt := time.Duration(dtRaw) * time.Second
+
+	badReward, err := utils.GetEnvFloat64("SCUP_RRP_BAD_REWARD")
+	if err != nil {
+		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
+	}
+
+	rrp = &RealRotatyPendulum{
+		seri,
+		dt,
+		nil,
+		nil,
+		badReward,
+	}
+
+	return nil
+}
+
+func (rrp *RealRotatyPendulum) Reset() error {
+	for {
+		if rrp.s != nil && math.Abs(rrp.s.BaseAngle) < RRPInitialBaseAngleRange {
+			return nil
+		}
+
+		if err := rrp.RunStep([]float64{RRPResetInput}); err != nil {
+			return fmt.Errorf("reset error: %w", err)
+		}
+	}
+}
+
+func (rrp *RealRotatyPendulum) State() (s []float64, err error) {
+	return rrp.s.ToState(rrp.sPrev), nil
+}
+
+func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
+	time.Sleep(rrp.dt)
+
+	// Send
+	if len(a) != 1 {
+		panic(fmt.Errorf("action len must be 1, but %d", len(a)))
+	}
+	sendData := NewRRPSendData(a[0])
+
+	n, err := rrp.seri.Write(sendData.ToBytes())
+	if err != nil {
+		return fmt.Errorf("run step error: %w", err)
+	}
+	if n != RRPSendDataLen {
+		return NewRRPSerialTxError(n)
+	}
+
+	// Receive
+	buf := make([]byte, 14)
+	n, err = rrp.seri.Read(buf)
+	if err != nil {
+		return fmt.Errorf("run step error: %w", err)
+	}
+	if n != RRPEncodedReceiveDataLen {
+		return NewRRPSerialRxError(n)
+	}
+	encData, err := NewRRPEncodedReceiveData(buf)
+	if err != nil {
+		return fmt.Errorf("run step error: %w", err)
+	}
+	rsvData, err := encData.ToRRPReceiveData()
+	if err != nil {
+		return fmt.Errorf("run step error: %w", err)
+	}
+	s := rsvData.ToRRPState()
+
+	// Update
+	rrp.s, rrp.sPrev = s, rrp.s
+
+	return nil
+}
+
+func (rrp *RealRotatyPendulum) IsFinish(s []float64) (bool, error) {
+	baseAngle := math.Abs(s[0])
+	pendAngle := math.Abs(s[1])
+	pendVel := math.Abs(s[3])
+
+	res := baseAngle >= RRPMaxBaseAngleRange ||
+		pendAngle < RRPMaxTopPendulumAngleRange && pendVel > RRPMaxTopPendulumVelocityRange
+	return res, nil
+}
+
+func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
+	return func(s []float64) float64 {
+		if isFinish, _ := rrp.IsFinish(s); isFinish {
+			return rrp.badReward
+		}
+		baseAngle := math.Abs(s[0])
+		pendAngle := math.Abs(s[1])
+		return -pendAngle + math.Pi/2. - 0.01*baseAngle
+	}
+}
+
+func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {
+	return func(s []float64) float64 {
+		if isFinish, _ := rrp.IsFinish(s); isFinish {
+			return rrp.badReward
+		}
+		baseAngle := math.Abs(s[0])
+		pendAngle := math.Abs(s[1])
+		return pendAngle - math.Pi/2. - 0.01*baseAngle
+	}
+}
+
+func (rrp *RealRotatyPendulum) Close() error {
+	if err := rrp.RunStep([]float64{0.}); err != nil {
+		return fmt.Errorf("rrp close error: %w", err)
+	}
+
+	if err := rrp.seri.Close(); err != nil {
+		return fmt.Errorf("rrp close error: %w", err)
+	}
+
+	return nil
+}
 
 const RRPMaxEncoder = 200000
 const RRPMaxPotentiomater = 1024
@@ -53,6 +195,23 @@ type RRPState struct {
 	BaseAngle     float64
 	PendulumAngle float64
 	PWMVoltage    float64
+}
+
+func (rrps *RRPState) ToState(prev *RRPState) []float64 {
+	if rrps.TimeStamp <= prev.TimeStamp {
+		return nil
+	}
+
+	dt := time.Duration(rrps.TimeStamp-prev.TimeStamp) * time.Millisecond
+
+	baseVel := rrps.velocity(rrps.BaseAngle, prev.BaseAngle, dt)
+	pendulumVel := rrps.velocity(rrps.PendulumAngle, prev.PendulumAngle, dt)
+
+	return []float64{rrps.BaseAngle, rrps.PendulumAngle, baseVel, pendulumVel}
+}
+
+func (*RRPState) velocity(cur, prev float64, dt time.Duration) float64 {
+	return (cur - prev) / dt.Seconds()
 }
 
 const RRPEncodedReceiveDataLen = 14
@@ -202,11 +361,13 @@ func (rd *RRPReceiveData) rawPWMDutyToVoltage(raw uint32) float64 {
 	return float64(sign) * float64(RRPMaxPWMDuty-raw) / RRPMaxPWMDuty * RRPMaxPWMVoltage
 }
 
+const RRPSendDataLen = 8
+
 type RRPSendData struct {
 	motor float64
 }
 
-func NewSendData(motor float64) *RRPSendData {
+func NewRRPSendData(motor float64) *RRPSendData {
 	return &RRPSendData{motor}
 }
 

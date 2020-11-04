@@ -13,6 +13,7 @@ type Environment interface {
 	IsFinish(s []float64) (bool, error)
 	RewardFuncUp() func(s []float64) float64
 	RewardFuncDown() func(s []float64) float64
+	Close() error
 }
 
 func SelectEnvironment() (Environment, error) {
@@ -25,8 +26,8 @@ func SelectEnvironment() (Environment, error) {
 	switch envName {
 	case "Cartpole":
 		env = new(Cartpole)
-	// case "RealRotatyPendulum":
-	// 	env = new(RealRotatyPendulum)
+	case "RealRotatyPendulum":
+		env = new(RealRotatyPendulum)
 	default:
 		return nil, fmt.Errorf("invalid env name")
 	}

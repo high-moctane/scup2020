@@ -28,7 +28,7 @@ func main() {
 
 		time.Sleep(500 * time.Millisecond)
 
-		input := environ.NewSendData(val).ToBytes()
+		input := environ.NewRRPSendData(val).ToBytes()
 
 		n, err := s.Write(input)
 		if err != nil {

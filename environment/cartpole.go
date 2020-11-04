@@ -76,6 +76,8 @@ func (cp *Cartpole) RewardFuncDown() func(s []float64) float64 {
 	}
 }
 
+func (*Cartpole) Close() error { return nil }
+
 func (cp *Cartpole) solveRungeKutta(s [4]float64, u, dt float64) [4]float64 {
 	k1 := cp.differential(s, u)
 	s1 := cp.solveEuler(s, k1, dt/2.)
