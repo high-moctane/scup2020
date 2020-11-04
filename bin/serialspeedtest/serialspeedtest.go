@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	scup "github.com/high-moctane/lab_scup2020"
+	environ "github.com/high-moctane/lab_scup2020/environment"
 	"github.com/tarm/serial"
 )
 
@@ -49,7 +49,7 @@ func main() {
 			rxErrorIdx = append(rxErrorIdx, i)
 			continue
 		}
-		raw, err := scup.NewEncodedReceiveData(receive)
+		raw, err := environ.NewEncodedReceiveData(receive)
 		if err != nil {
 			rxErrorIdx = append(rxErrorIdx, i)
 			continue

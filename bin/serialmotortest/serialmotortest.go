@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	scup "github.com/high-moctane/lab_scup2020"
+	environ "github.com/high-moctane/lab_scup2020/environment"
 	"github.com/tarm/serial"
 )
 
@@ -20,6 +20,7 @@ func main() {
 		log.Fatal(err)
 	}
 	defer s.Close()
+	defer s.Write([]byte{0, 0, 0, 0, 0, 0, 0, 0})
 
 	val := 0.5
 	for {
@@ -27,7 +28,7 @@ func main() {
 
 		time.Sleep(500 * time.Millisecond)
 
-		input := scup.NewSendData(val).ToBytes()
+		input := environ.NewSendData(val).ToBytes()
 
 		n, err := s.Write(input)
 		if err != nil {
@@ -40,7 +41,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		data, err := scup.NewEncodedReceiveData(buf)
+		data, err := environ.NewEncodedReceiveData(buf)
 		if err != nil {
 			log.Println(err)
 			continue
@@ -49,6 +50,6 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		fmt.Printf("rx %v: %v\n", n, d)
+		fmt.Printf("rx %v: %v\n", n, d.ToRRPState())
 	}
 }
