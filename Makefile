@@ -4,6 +4,11 @@ TARGET := \
 	serialspeedtest \
 	cartpoletest
 
+SUBDIR := \
+	agent \
+	environment \
+	logger
+
 RASPI := pi@mocraspizero.local:~/scup2020
 RASPI_ENV := GOOS=linux GOARCH=arm GOARM=6
 
@@ -45,16 +50,20 @@ deploy:
 test:
 	go test
 
-define template_vet
+define template_vet_target
 	-cd bin/$(1) && go vet
+
+endef
+
+define template_vet_subdir
+	-cd $(1) && go vet
 
 endef
 
 vet:
 	-go vet
-	-cd environment && go vet
-	-cd agent && go vet
-	$(foreach target,$(TARGET),$(call template_vet,$(target)))
+	$(foreach target,$(TARGET),$(call template_vet_target,$(target)))
+	$(foreach subdir,$(SUBDIR),$(call template_vet_subdir,$(subdir)))
 
 clean:
 	$(foreach target,$(TARGET),-rm bin/$(target)/$(target))
