@@ -252,6 +252,8 @@ func (rl *RL) RunEpisode(ctx context.Context, episode, mode int) (returns float6
 		agentDataPath = rl.agentDownDataPath
 	}
 
+	ag.Reset()
+
 	var s1, s2, a1, a2 []float64
 	s1, err = rl.env.State()
 	if err != nil {

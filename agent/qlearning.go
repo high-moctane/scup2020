@@ -6,6 +6,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"strconv"
@@ -167,7 +168,8 @@ type QLearning struct {
 	actions        [][]float64
 	actionsIndices map[string]int
 
-	QTable [][]float64
+	QTable   [][]float64
+	Episodes int
 }
 
 func (ql *QLearning) Init() error {
@@ -181,10 +183,15 @@ func (ql *QLearning) Init() error {
 	}
 	ql.QTable = qtable
 
+	ql.Episodes = 0
+
 	return nil
 }
 
-func (ql *QLearning) Reset() {}
+func (ql *QLearning) Reset() {
+	ql.Episodes += 1
+	log.Printf("qlearning episode %d", ql.Episodes)
+}
 
 func (ql *QLearning) Action(s []float64) []float64 {
 	var idx int
@@ -240,6 +247,7 @@ func (ql *QLearning) Save(dst string) error {
 	}
 
 	// logger.Get().Info("agent saved to %s", dst)
+	log.Printf("agent save to %s", dst)
 
 	return nil
 }
@@ -265,8 +273,10 @@ func (ql *QLearning) Load(src string) error {
 	}
 
 	ql.QTable = data.QTable
+	ql.Episodes = data.Episodes
 
 	// logger.Get().Info("agent loaded to %s", src)
+	log.Printf("agent load from %s", src)
 
 	return nil
 }

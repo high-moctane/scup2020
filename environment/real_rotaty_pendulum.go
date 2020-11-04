@@ -18,7 +18,7 @@ const RRPMaxBaseAngleRange = math.Pi / 2
 const RRPMaxTopPendulumAngleRange = math.Pi / 32
 const RRPMaxTopPendulumVelocityRange = 10
 const RRPMaxBottomPendulumAngleRange = math.Pi * 31 / 32
-const RRPMaxBottomPendulumVelocityRange = 0.1 * math.Pi
+const RRPMaxBottomPendulumVelocityRange = 0.2 * math.Pi
 
 type RRPSerialTxError struct {
 	n int
