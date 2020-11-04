@@ -46,20 +46,16 @@ func (cp *Cartpole) RunStep(a []float64) error {
 	return nil
 }
 
-func (cp *Cartpole) isFinish(s []float64) bool {
+func (*Cartpole) IsFinish(s []float64) (bool, error) {
 	x := s[0]
 	theta := s[1]
 	thetaDot := s[3]
-	return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 3*math.Pi
-}
-
-func (cp *Cartpole) IsFinish() (bool, error) {
-	return cp.isFinish(cp.s[:]), nil
+	return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 3*math.Pi, nil
 }
 
 func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {
 	return func(s []float64) float64 {
-		if cp.isFinish(s) {
+		if isFinish, _ := cp.IsFinish(s); isFinish {
 			return -1000.
 		}
 		x := s[0]
@@ -70,7 +66,7 @@ func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {
 
 func (cp *Cartpole) RewardFuncDown() func(s []float64) float64 {
 	return func(s []float64) float64 {
-		if cp.isFinish(s) {
+		if isFinish, _ := cp.IsFinish(s); isFinish {
 			return -1000.
 		}
 		x := s[0]

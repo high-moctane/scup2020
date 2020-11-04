@@ -152,7 +152,7 @@ func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
 		ag.Learn(s1, a1, r, s2, a2)
 
 		var isFinish bool
-		isFinish, err = rl.env.IsFinish()
+		isFinish, err = rl.env.IsFinish(s2)
 		if err != nil {
 			return
 		} else if isFinish {

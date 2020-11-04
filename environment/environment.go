@@ -10,7 +10,7 @@ type Environment interface {
 	Reset() error
 	State() (s []float64, err error)
 	RunStep(a []float64) (err error)
-	IsFinish() (bool, error)
+	IsFinish(s []float64) (bool, error)
 	RewardFuncUp() func(s []float64) float64
 	RewardFuncDown() func(s []float64) float64
 }
