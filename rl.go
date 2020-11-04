@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	RLRunUp = iota
+	RLRunUpDown = iota
+	RLRunUp
 	RLRunDown
 )
 
@@ -160,6 +161,19 @@ func (rl *RL) RunDown() error {
 	return nil
 }
 
+func (rl *RL) Run(mode int) error {
+	switch mode {
+	case RLRunUpDown:
+		return rl.RunUpDown()
+	case RLRunUp:
+		return rl.RunUp()
+	case RLRunDown:
+		return rl.RunDown()
+	default:
+		return fmt.Errorf("rl run error: invalid mode: %d", mode)
+	}
+}
+
 func (rl *RL) RunEpisodeUp(episode int) (returns float64, err error) {
 	return rl.RunEpisode(episode, RLRunUp)
 }
@@ -246,4 +260,8 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	}
 
 	return
+}
+
+func (rl *RL) Close() error {
+	return rl.env.Close()
 }
