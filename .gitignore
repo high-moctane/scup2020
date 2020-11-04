@@ -13,3 +13,15 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+result/
+*.result
+
+/bin/serialtest/serialtest
+/bin/serialtest/serialtest-raspi
+/bin/serialmotortest/serialmotortest
+/bin/serialmotortest/serialmotortest-raspi
+/bin/serialspeedtest/serialspeedtest
+/bin/serialspeedtest/serialspeedtest-raspi
+/bin/cartpoletest/cartpoletest
+/bin/cartpoletest/cartpoletest-raspi
