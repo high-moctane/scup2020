@@ -30,3 +30,15 @@ func SelectAgent() (Agent, error) {
 
 	return res, nil
 }
+
+type AgentDataNotFound struct {
+	src string
+}
+
+func NewAgentDataNotFound(src string) *AgentDataNotFound {
+	return &AgentDataNotFound{src}
+}
+
+func (e *AgentDataNotFound) Error() string {
+	return fmt.Sprintf("agent data not found: %s", e.src)
+}

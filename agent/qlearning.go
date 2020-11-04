@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -241,9 +242,11 @@ func (ql *QLearning) Save(dst string) error {
 }
 
 func (ql *QLearning) Load(src string) error {
+	pathError := new(os.PathError)
+
 	f, err := os.Open(src)
-	if err != nil {
-		return fmt.Errorf("cannot load qlearning from %s: %w", src, err)
+	if err != nil && !errors.As(err, &pathError) {
+		return NewAgentDataNotFound(src)
 	}
 	defer f.Close()
 

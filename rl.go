@@ -30,6 +30,7 @@ type RL struct {
 }
 
 func NewRL() (*RL, error) {
+	// Env
 	env, err := environment.SelectEnvironment()
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
@@ -38,6 +39,7 @@ func NewRL() (*RL, error) {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
+	// Agent
 	agentUp, err := agent.SelectAgent()
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
@@ -54,24 +56,36 @@ func NewRL() (*RL, error) {
 		return nil, fmt.Errorf("new agentup failed: %w", err)
 	}
 
+	// Reward func
 	rewardFuncUp := env.RewardFuncUp()
 	rewardFuncDown := env.RewardFuncDown()
 
+	// AgentDataPath and loading agent data
+	agentDataNotFoundError := &agent.AgentDataNotFound{}
+
 	agentUpDataPath, ok := os.LookupEnv("SCUP_RL_AGENT_UP_DATA_PATH")
 	if !ok {
+		return nil, fmt.Errorf("new rl failed: not found SCUP_RL_AGENT_UP_DATA_PATH")
+	}
+	if err := agentUp.Load(agentUpDataPath); err != nil && !errors.As(err, &agentDataNotFoundError) {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
 	agentDownDataPath, ok := os.LookupEnv("SCUP_RL_AGENT_UP_DATA_PATH")
 	if !ok {
+		return nil, fmt.Errorf("new rl failed: not found SCUP_RL_AGENT_DOWN_DATA_PATH")
+	}
+	if err := agentUp.Load(agentUpDataPath); err != nil && !errors.As(err, &agentDataNotFoundError) {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
+	// AgentSaveFreq
 	agentSaveFreq, err := utils.GetEnvInt("SCUP_RL_AGENT_SAVE_FREQUENT")
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
+	// Max episodes and steps
 	maxEpisode, err := utils.GetEnvInt("SCUP_RL_MAX_EPISODE")
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
