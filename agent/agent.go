@@ -10,6 +10,8 @@ type Agent interface {
 	Reset()
 	Action(s []float64) (a []float64)
 	Learn(s1, a1 []float64, r float64, s2, a2 []float64)
+	Save(string) error
+	Load(string) error
 }
 
 func SelectAgent() (Agent, error) {

@@ -1,6 +1,9 @@
 package agent
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"math/rand"
 	"os"
@@ -211,6 +214,58 @@ func (ql *QLearning) Learn(s1, a1 []float64, r float64, s2, a2 []float64) {
 
 	ql.qtable[s1Idx][a1Idx] =
 		(1.-alpha)*ql.qtable[s1Idx][a1Idx] + alpha*(r+gamma*max)
+}
+
+func (ql *QLearning) Save(dst string) error {
+	f, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("cannot save qlearning to %s: %w", dst, err)
+	}
+	defer f.Close()
+
+	buf := bytes.NewBuffer(nil)
+
+	type Alias QLearning
+	err = gob.NewEncoder(buf).Encode(struct {
+		QTable [][]float64
+		*Alias
+	}{QTable: ql.qtable, Alias: (*Alias)(ql)})
+	if err != nil {
+		return fmt.Errorf("cannot save qlearning to %s: %w", dst, err)
+	}
+
+	w := bufio.NewWriter(f)
+	defer w.Flush()
+
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		return fmt.Errorf("cannot save qlearning to %s: %w", dst, err)
+	}
+
+	return nil
+}
+
+func (ql *QLearning) Load(src string) error {
+	f, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("cannot load qlearning from %s: %w", src, err)
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+
+	type Alias QLearning
+	data := struct {
+		QLearning [][]float64
+		*Alias
+	}{Alias: (*Alias)(ql)}
+
+	if err := gob.NewDecoder(r).Decode(&data); err != nil {
+		return fmt.Errorf("cannot load qlearning from %s: %w", src, err)
+	}
+
+	ql.qtable = data.qtable
+
+	return nil
 }
 
 func (ql *QLearning) loadEnv() error {
