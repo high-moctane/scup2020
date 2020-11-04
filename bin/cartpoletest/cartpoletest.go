@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -22,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := rl.RunUpDown(); err != nil {
+	if err := rl.RunUpDown(context.Background()); err != nil {
 		log.Fatal(err)
 	}
 }

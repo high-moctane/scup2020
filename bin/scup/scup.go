@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	scup "github.com/high-moctane/lab_scup2020"
@@ -21,6 +24,10 @@ func main() {
 }
 
 func run(args []string) error {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	if len(args) != 2 {
 		return fmt.Errorf("invalid args")
 	}
@@ -42,9 +49,24 @@ func run(args []string) error {
 
 	time.Sleep(2 * time.Second)
 
-	if err := rl.Run(mode); err != nil {
-		return fmt.Errorf("run error: %w", err)
-	}
+	go func() {
+		if err := rl.Run(ctx, mode); err != nil {
+			log.Println(fmt.Errorf("run error: %w", err))
+			return
+		}
+	}()
+
+	sig := make(chan os.Signal, 1)
+
+	signal.Notify(
+		sig,
+		syscall.SIGKILL,
+		syscall.SIGTERM,
+		syscall.SIGINT,
+	)
+
+	<-sig
+	log.Println("Interrupted")
 
 	return nil
 }

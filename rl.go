@@ -1,6 +1,7 @@
 package lab_scup2020
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -121,16 +122,22 @@ func NewRL() (*RL, error) {
 	return res, nil
 }
 
-func (rl *RL) RunUpDown() error {
+func (rl *RL) RunUpDown(ctx context.Context) error {
 	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
-		_, err := rl.RunEpisodeUp(episode)
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		_, err := rl.RunEpisodeUp(ctx, episode)
 		if err != nil {
 			if !errors.Is(EndOfEpisode, err) {
 				return fmt.Errorf("rl run error: %w", err)
 			}
 		}
 
-		_, err = rl.RunEpisodeDown(episode)
+		_, err = rl.RunEpisodeDown(ctx, episode)
 		if err != nil {
 			if !errors.Is(EndOfEpisode, err) {
 				return fmt.Errorf("rl run error: %w", err)
@@ -141,9 +148,15 @@ func (rl *RL) RunUpDown() error {
 	return nil
 }
 
-func (rl *RL) RunUp() error {
+func (rl *RL) RunUp(ctx context.Context) error {
 	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
-		_, err := rl.RunEpisodeUp(episode)
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		_, err := rl.RunEpisodeUp(ctx, episode)
 		if err != nil {
 
 			if !errors.Is(EndOfEpisode, err) {
@@ -155,9 +168,15 @@ func (rl *RL) RunUp() error {
 	return nil
 }
 
-func (rl *RL) RunDown() error {
+func (rl *RL) RunDown(ctx context.Context) error {
 	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
-		_, err := rl.RunEpisodeDown(episode)
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		_, err := rl.RunEpisodeDown(ctx, episode)
 		if err != nil {
 			if !errors.Is(EndOfEpisode, err) {
 				return fmt.Errorf("rl run error: %w", err)
@@ -168,34 +187,34 @@ func (rl *RL) RunDown() error {
 	return nil
 }
 
-func (rl *RL) Run(mode int) error {
+func (rl *RL) Run(ctx context.Context, mode int) error {
 	switch mode {
 	case RLRunUpDown:
-		return rl.RunUpDown()
+		return rl.RunUpDown(ctx)
 	case RLRunUp:
-		return rl.RunUp()
+		return rl.RunUp(ctx)
 	case RLRunDown:
-		return rl.RunDown()
+		return rl.RunDown(ctx)
 	default:
 		return fmt.Errorf("rl run error: invalid mode: %d", mode)
 	}
 }
 
-func (rl *RL) RunEpisodeUp(episode int) (returns float64, err error) {
+func (rl *RL) RunEpisodeUp(ctx context.Context, episode int) (returns float64, err error) {
 	log.Printf("up start episode %d", episode)
-	returns, err = rl.RunEpisode(episode, RLRunUp)
+	returns, err = rl.RunEpisode(ctx, episode, RLRunUp)
 	log.Printf("up end episode %d reward %v", episode, returns)
 	return
 }
 
-func (rl *RL) RunEpisodeDown(episode int) (returns float64, err error) {
+func (rl *RL) RunEpisodeDown(ctx context.Context, episode int) (returns float64, err error) {
 	log.Printf("down start episode %d", episode)
-	returns, err = rl.RunEpisode(episode, RLRunDown)
+	returns, err = rl.RunEpisode(ctx, episode, RLRunDown)
 	log.Printf("down end episode %d returns %v", episode, returns)
 	return
 }
 
-func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
+func (rl *RL) RunEpisode(ctx context.Context, episode, mode int) (returns float64, err error) {
 	defer rl.env.RunStep([]float64{0})
 
 	// Reset
@@ -240,6 +259,12 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	var rxError *environment.RRPSerialRxError
 
 	for step := 0; step == -1 || step < maxStep; step++ {
+		select {
+		case <-ctx.Done():
+			return returns, nil
+		default:
+		}
+
 		if err = rl.env.RunStep(a1); err != nil {
 			if errors.As(err, &rxError) {
 				continue

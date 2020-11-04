@@ -14,7 +14,7 @@ import (
 
 const RRPResetInput = 0.25
 const RRPInitialBaseAngleRange = math.Pi / 32
-const RRPMaxBaseAngleRange = math.Pi / 3
+const RRPMaxBaseAngleRange = math.Pi / 2
 const RRPMaxTopPendulumAngleRange = math.Pi / 32
 const RRPMaxTopPendulumVelocityRange = 10
 
