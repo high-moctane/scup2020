@@ -23,7 +23,6 @@ func (cp *Cartpole) Init() error {
 	cp.ml = cp.m * cp.l
 	cp.mass = cp.m + cartMass
 	cp.initState = [4]float64{0., math.Pi, 0., 0.}
-	cp.initState = [4]float64{0., 0., 0., 0.}
 	cp.s = cp.initState
 	return nil
 }
@@ -59,30 +58,9 @@ func (cp *Cartpole) IsFinish() (bool, error) {
 }
 
 func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {
-	// TODO
-	// return func(s []float64) float64 {
-	// 	x := s[0]
-	// 	thetaDot := s[3]
-	// 	if math.Abs(x) > 2. || math.Abs(thetaDot) > 2. {
-	// 		return -2.
-	// 	}
-	// 	theta := s[1]
-	// 	return -math.Abs(theta) + math.Pi/2. - 0.01*math.Abs(x)
-	// }
-
-	// return func(s []float64) float64 {
-	// 	x := s[0]
-	// 	thetaDot := s[3]
-	// 	if math.Abs(x) > 2. || math.Abs(thetaDot) > CartpoleMaxAbsThetaDot {
-	// 		return -10000000.
-	// 	}
-	// 	theta := s[1]
-	// 	return -math.Abs(theta) + math.Pi/2. - 0.01*math.Abs(x)
-	// }
-
 	return func(s []float64) float64 {
 		if cp.isFinish(s) {
-			return -10000000.
+			return -1000.
 		}
 		x := s[0]
 		theta := s[1]
@@ -90,14 +68,12 @@ func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {
 	}
 }
 
-func (*Cartpole) RewardFuncDown() func(s []float64) float64 {
-	// TODO
+func (cp *Cartpole) RewardFuncDown() func(s []float64) float64 {
 	return func(s []float64) float64 {
-		x := s[0]
-		thetaDot := s[3]
-		if math.Abs(x) > 2. || math.Abs(thetaDot) > 4. {
-			return -2.
+		if cp.isFinish(s) {
+			return -1000.
 		}
+		x := s[0]
 		theta := s[1]
 		return math.Abs(theta) + math.Pi/2. - 0.01*math.Abs(x)
 	}
