@@ -48,9 +48,10 @@ func (cp *Cartpole) RunStep(a []float64) error {
 
 func (*Cartpole) IsFinish(s []float64) (bool, error) {
 	x := s[0]
-	theta := s[1]
-	thetaDot := s[3]
-	return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 3*math.Pi, nil
+	// theta := s[1]
+	// thetaDot := s[3]
+	return math.Abs(x) > 3., nil
+	// return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 10, nil
 }
 
 func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {
