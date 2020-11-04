@@ -25,6 +25,8 @@ func SelectEnvironment() (Environment, error) {
 	switch envName {
 	case "Cartpole":
 		env = new(Cartpole)
+	// case "RealRotatyPendulum":
+	// 	env = new(RealRotatyPendulum)
 	default:
 		return nil, fmt.Errorf("invalid env name")
 	}
