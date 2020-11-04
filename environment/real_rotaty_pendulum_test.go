@@ -6,15 +6,15 @@ import (
 	"testing"
 )
 
-func TestNewEncodedReceiveData(t *testing.T) {
+func TestNewRRPEncodedReceiveData(t *testing.T) {
 	tests := []struct {
 		input string
-		data  *EncodedReceiveData
+		data  *RRPEncodedReceiveData
 		ok    bool
 	}{
 		{
 			"013J0003F33DA\n",
-			&EncodedReceiveData{
+			&RRPEncodedReceiveData{
 				[4]byte{'0', '1', '3', 'J'},
 				[3]byte{'0', '0', '0'},
 				[2]byte{'3', 'F'},
@@ -26,7 +26,7 @@ func TestNewEncodedReceiveData(t *testing.T) {
 		},
 		{
 			"0D^;9@h3G33CA\n",
-			&EncodedReceiveData{
+			&RRPEncodedReceiveData{
 				[4]byte{'0', 'D', '^', ';'},
 				[3]byte{'9', '@', 'h'},
 				[2]byte{'3', 'G'},
@@ -38,7 +38,7 @@ func TestNewEncodedReceiveData(t *testing.T) {
 		},
 		{
 			"0No@9@g:N33Cn\n",
-			&EncodedReceiveData{
+			&RRPEncodedReceiveData{
 				[4]byte{'0', 'N', 'o', '@'},
 				[3]byte{'9', '@', 'g'},
 				[2]byte{':', 'N'},
@@ -57,7 +57,7 @@ func TestNewEncodedReceiveData(t *testing.T) {
 
 	for i, test := range tests {
 		buf := []byte(test.input)
-		data, err := NewEncodedReceiveData(buf)
+		data, err := NewRRPEncodedReceiveData(buf)
 		if test.ok {
 			if err != nil {
 				t.Errorf("[%d] ok buf failed: %v", i, err)
@@ -76,14 +76,14 @@ func TestNewEncodedReceiveData(t *testing.T) {
 	}
 }
 
-func TestEncodedReceiveData_ToReceiveData(t *testing.T) {
+func TestRRPEncodedReceiveData_ToRRPReceiveData(t *testing.T) {
 	tests := []struct {
 		input    string
-		expected *ReceiveData
+		expected *RRPReceiveData
 	}{
 		{
 			"013J0003F33DA\n",
-			&ReceiveData{
+			&RRPReceiveData{
 				4314,
 				0,
 				214,
@@ -92,7 +92,7 @@ func TestEncodedReceiveData_ToReceiveData(t *testing.T) {
 		},
 		{
 			"0D^;9@h3G33CA\n",
-			&ReceiveData{
+			&RRPReceiveData{
 				84875,
 				37944,
 				215,
@@ -103,13 +103,13 @@ func TestEncodedReceiveData_ToReceiveData(t *testing.T) {
 
 	for i, test := range tests {
 		buf := []byte(test.input)
-		encData, err := NewEncodedReceiveData(buf)
+		encData, err := NewRRPEncodedReceiveData(buf)
 		if err != nil {
-			t.Errorf("[%d] failed NewEncodedReceiveData: %v: %v", i, test.input, err)
+			t.Errorf("[%d] failed NewRRPEncodedReceiveData: %v: %v", i, test.input, err)
 			continue
 		}
 
-		receiveData, err := encData.ToReceiveData()
+		receiveData, err := encData.ToRRPReceiveData()
 		if test.expected == nil {
 			if err != nil {
 				t.Errorf("[%d] expected err but err is nil: %q", i, test.input)
@@ -127,7 +127,7 @@ func TestEncodedReceiveData_ToReceiveData(t *testing.T) {
 	}
 }
 
-func TestReceiveData_rawEncoderToRad(t *testing.T) {
+func TestRRPReceiveData_rawEncoderToRad(t *testing.T) {
 	tests := []struct {
 		input    uint32
 		expected string
@@ -147,7 +147,7 @@ func TestReceiveData_rawEncoderToRad(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		rad := new(ReceiveData).rawEncoderToRad(test.input)
+		rad := new(RRPReceiveData).rawEncoderToRad(test.input)
 		str := fmt.Sprintf("%.2f", rad)
 		if test.expected != str {
 			t.Errorf("[%d] expected %q, but %q", i, test.expected, str)
@@ -155,7 +155,7 @@ func TestReceiveData_rawEncoderToRad(t *testing.T) {
 	}
 }
 
-func TestReceiveData_rawPotentiometerToRad(t *testing.T) {
+func TestRRPReceiveData_rawPotentiometerToRad(t *testing.T) {
 	tests := []struct {
 		input    uint32
 		expected string
@@ -175,7 +175,7 @@ func TestReceiveData_rawPotentiometerToRad(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		rad := new(ReceiveData).rawPotentiomaterToRad(test.input)
+		rad := new(RRPReceiveData).rawPotentiomaterToRad(test.input)
 		str := fmt.Sprintf("%.2f", rad)
 		if test.expected != str {
 			t.Errorf("[%d] expected %q, but %q", i, test.expected, str)
@@ -183,7 +183,7 @@ func TestReceiveData_rawPotentiometerToRad(t *testing.T) {
 	}
 }
 
-func TestReceiveData_rawPWMDutyToVoltage(t *testing.T) {
+func TestRRPReceiveData_rawPWMDutyToVoltage(t *testing.T) {
 	tests := []struct {
 		input    uint32
 		expected string
@@ -207,7 +207,7 @@ func TestReceiveData_rawPWMDutyToVoltage(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		rad := new(ReceiveData).rawPWMDutyToVoltage(test.input)
+		rad := new(RRPReceiveData).rawPWMDutyToVoltage(test.input)
 		str := fmt.Sprintf("%.2f", rad)
 		if test.expected != str {
 			t.Errorf("[%d] expected %q, but %q", i, test.expected, str)

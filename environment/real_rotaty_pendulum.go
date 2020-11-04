@@ -13,7 +13,7 @@ const RRPResetInput = 0.25
 // type RealRotatyPendulum struct {
 // 	seri *serial.Port
 //
-// 	s, sPrev ReceiveData
+// 	s, sPrev RRPReceiveData
 // }
 
 // func (rrp *RealRotatyPendulum) Init() error {
@@ -55,9 +55,9 @@ type RRPState struct {
 	PWMVoltage    float64
 }
 
-const EncodedReceiveDataLen = 14
+const RRPEncodedReceiveDataLen = 14
 
-type EncodedReceiveData struct {
+type RRPEncodedReceiveData struct {
 	TimeStamp     [4]byte
 	BaseAngle     [3]byte
 	PendulumAngle [2]byte
@@ -66,9 +66,9 @@ type EncodedReceiveData struct {
 	Terminator    byte
 }
 
-func NewEncodedReceiveData(buf []byte) (*EncodedReceiveData, error) {
-	if len(buf) != EncodedReceiveDataLen {
-		return nil, fmt.Errorf("invalid EncodedReceiveDataLen (%d)", len(buf))
+func NewRRPEncodedReceiveData(buf []byte) (*RRPEncodedReceiveData, error) {
+	if len(buf) != RRPEncodedReceiveDataLen {
+		return nil, fmt.Errorf("invalid RRPEncodedReceiveDataLen (%d)", len(buf))
 	}
 
 	data := buf[:12]
@@ -83,7 +83,7 @@ func NewEncodedReceiveData(buf []byte) (*EncodedReceiveData, error) {
 		return nil, fmt.Errorf("checksum expected %v, but %v: %v", checkSum, sum, buf)
 	}
 
-	res := EncodedReceiveData{
+	res := RRPEncodedReceiveData{
 		[4]byte{buf[0], buf[1], buf[2], buf[3]},
 		[3]byte{buf[4], buf[5], buf[6]},
 		[2]byte{buf[7], buf[8]},
@@ -107,32 +107,32 @@ func calcCheckSum(data []byte) byte {
 	return byte(res&0x3f + 0x30)
 }
 
-func (erd *EncodedReceiveData) ToReceiveData() (*ReceiveData, error) {
+func (erd *RRPEncodedReceiveData) ToRRPReceiveData() (*RRPReceiveData, error) {
 	timeStamp, err := erd.decode(erd.TimeStamp[:])
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert timeStamp %v to ReceiveData", erd)
+		return nil, fmt.Errorf("cannot convert timeStamp %v to RRPReceiveData", erd)
 	}
 
 	baseAngle, err := erd.decode(erd.BaseAngle[:])
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert baseAngle %v to ReceiveData", erd)
+		return nil, fmt.Errorf("cannot convert baseAngle %v to RRPReceiveData", erd)
 	}
 
 	pendulumAngle, err := erd.decode(erd.PendulumAngle[:])
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert pendulumAngle %v to ReceiveData", erd)
+		return nil, fmt.Errorf("cannot convert pendulumAngle %v to RRPReceiveData", erd)
 	}
 
 	pwmDuty, err := erd.decode(erd.PWMDuty[:])
 	if err != nil {
-		return nil, fmt.Errorf("cannot convert pwmDuty %v to ReceiveData", erd)
+		return nil, fmt.Errorf("cannot convert pwmDuty %v to RRPReceiveData", erd)
 	}
 
-	res := &ReceiveData{timeStamp, baseAngle, pendulumAngle, pwmDuty}
+	res := &RRPReceiveData{timeStamp, baseAngle, pendulumAngle, pwmDuty}
 	return res, nil
 }
 
-func (*EncodedReceiveData) decode(data []byte) (uint32, error) {
+func (*RRPEncodedReceiveData) decode(data []byte) (uint32, error) {
 	var res uint32
 
 	for _, v := range data {
@@ -151,11 +151,11 @@ func (*EncodedReceiveData) decode(data []byte) (uint32, error) {
 	return res, nil
 }
 
-type ReceiveData struct {
+type RRPReceiveData struct {
 	TimeStamp, BaseAngle, PendulumAngle, PWMDuty uint32
 }
 
-func (rd *ReceiveData) ToRRPState() *RRPState {
+func (rd *RRPReceiveData) ToRRPState() *RRPState {
 	return &RRPState{
 		rd.TimeStamp,
 		rd.rawEncoderToRad(rd.BaseAngle),
@@ -164,7 +164,7 @@ func (rd *ReceiveData) ToRRPState() *RRPState {
 	}
 }
 
-func (*ReceiveData) rawToSigned(raw uint32, max int64) int64 {
+func (*RRPReceiveData) rawToSigned(raw uint32, max int64) int64 {
 	var halfMax int64 = max / 2
 	var raw64 int64 = int64(raw)
 
@@ -180,17 +180,17 @@ func (*ReceiveData) rawToSigned(raw uint32, max int64) int64 {
 	return signed
 }
 
-func (rd *ReceiveData) rawEncoderToRad(raw uint32) float64 {
+func (rd *RRPReceiveData) rawEncoderToRad(raw uint32) float64 {
 	signed := rd.rawToSigned(raw, RRPMaxEncoder)
 	return float64(signed) / float64(RRPMaxEncoder/2) * math.Pi
 }
 
-func (rd *ReceiveData) rawPotentiomaterToRad(raw uint32) float64 {
+func (rd *RRPReceiveData) rawPotentiomaterToRad(raw uint32) float64 {
 	signed := rd.rawToSigned(raw, RRPMaxPotentiomater)
 	return float64(signed) / float64(RRPMaxPotentiomater/2) * math.Pi
 }
 
-func (rd *ReceiveData) rawPWMDutyToVoltage(raw uint32) float64 {
+func (rd *RRPReceiveData) rawPWMDutyToVoltage(raw uint32) float64 {
 	var sign float64
 	if raw>>16&1 == 0 {
 		sign = 1.
@@ -202,15 +202,15 @@ func (rd *ReceiveData) rawPWMDutyToVoltage(raw uint32) float64 {
 	return float64(sign) * float64(RRPMaxPWMDuty-raw) / RRPMaxPWMDuty * RRPMaxPWMVoltage
 }
 
-type SendData struct {
+type RRPSendData struct {
 	motor float64
 }
 
-func NewSendData(motor float64) *SendData {
-	return &SendData{motor}
+func NewSendData(motor float64) *RRPSendData {
+	return &RRPSendData{motor}
 }
 
-func (sd *SendData) ToBytes() []byte {
+func (sd *RRPSendData) ToBytes() []byte {
 	buf := bytes.NewBuffer([]byte{})
 	binary.Write(buf, binary.BigEndian, sd.motor)
 	return buf.Bytes()

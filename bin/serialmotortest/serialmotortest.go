@@ -41,12 +41,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		data, err := environ.NewEncodedReceiveData(buf)
+		data, err := environ.NewRRPEncodedReceiveData(buf)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		d, err := data.ToReceiveData()
+		d, err := data.ToRRPReceiveData()
 		if err != nil {
 			log.Println(err)
 		}

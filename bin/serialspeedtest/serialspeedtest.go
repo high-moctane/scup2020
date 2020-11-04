@@ -49,12 +49,12 @@ func main() {
 			rxErrorIdx = append(rxErrorIdx, i)
 			continue
 		}
-		raw, err := environ.NewEncodedReceiveData(receive)
+		raw, err := environ.NewRRPEncodedReceiveData(receive)
 		if err != nil {
 			rxErrorIdx = append(rxErrorIdx, i)
 			continue
 		}
-		data, err := raw.ToReceiveData()
+		data, err := raw.ToRRPReceiveData()
 		if err != nil {
 			rxErrorIdx = append(rxErrorIdx, i)
 			continue
