@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 
 const RRPResetInput = 0.25
 const RRPInitialBaseAngleRange = math.Pi / 32
-const RRPMaxBaseAngleRange = math.Pi
+const RRPMaxBaseAngleRange = math.Pi / 3
 const RRPMaxTopPendulumAngleRange = math.Pi / 32
 const RRPMaxTopPendulumVelocityRange = 10
 
@@ -96,12 +95,9 @@ func (rrp *RealRotatyPendulum) Init() error {
 func (rrp *RealRotatyPendulum) Reset() error {
 	var rxError *RRPSerialRxError
 
-	log.Println("rrp reset start")
-
 	for {
 		if rrp.s != nil && math.Abs(rrp.s.BaseAngle) < RRPInitialBaseAngleRange {
 			rrp.RunStep([]float64{0})
-			log.Println("rrp reset end", rrp.s)
 			return nil
 		}
 
@@ -183,7 +179,7 @@ func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
 		}
 		baseAngle := math.Abs(s[0])
 		relPendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
-		return -relPendAngle + math.Pi/2. - 0.01*baseAngle
+		return -relPendAngle + math.Pi/2. - 0.01*baseAngle - 1.0
 	}
 }
 
@@ -194,7 +190,7 @@ func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {
 		}
 		baseAngle := math.Abs(s[0])
 		relPendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
-		return relPendAngle - math.Pi/2. - 0.01*baseAngle
+		return relPendAngle - math.Pi/2. - 0.01*baseAngle - 1.0
 	}
 }
 
@@ -220,7 +216,7 @@ func relativeAngle(theta, other float64) float64 {
 	return res
 }
 
-const RRPMaxEncoder = 200000
+const RRPMaxEncoder = 262000
 const RRPMaxPotentiomater = 1024
 const RRPMaxPWMDuty = 12500
 const RRPMaxPWMVoltage = 5

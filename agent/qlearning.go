@@ -25,7 +25,7 @@ func makeQTable(stateSize, actionSize int) ([][]float64, error) {
 	for i := 0; i < stateSize; i++ {
 		res[i] = make([]float64, actionSize)
 		for j := 0; j < actionSize; j++ {
-			res[i][j] = initQ
+			res[i][j] = initQ + rand.Float64()*0.01
 		}
 	}
 

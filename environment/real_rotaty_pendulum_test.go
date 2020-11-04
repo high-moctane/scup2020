@@ -152,6 +152,10 @@ func TestRRPReceiveData_rawEncoderToRad(t *testing.T) {
 			175000,
 			"-0.79",
 		},
+		{
+			261000,
+			"-0.79",
+		},
 	}
 
 	for i, test := range tests {
