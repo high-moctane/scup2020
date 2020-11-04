@@ -205,6 +205,8 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	returns += r
 
 	// Run
+	var isFinish bool
+
 	for step := 0; step == -1 || step < maxStep; step++ {
 		if err = rl.env.RunStep(a1); err != nil {
 			return
@@ -216,23 +218,23 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 		}
 
 		r = rewardFunc(s2)
-		returns += r
 
 		a2 = ag.Action(s2)
 
 		ag.Learn(s1, a1, r, s2, a2)
 
-		var isFinish bool
+		if isFinish {
+			break
+		}
+
 		isFinish, err = rl.env.IsFinish(s2)
 		if err != nil {
-			return
-		} else if isFinish {
-			err = EndOfEpisode
 			return
 		}
 
 		s1 = s2
 		a1 = a2
+		returns += r
 	}
 
 	// Save
