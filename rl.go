@@ -7,6 +7,7 @@ import (
 
 	"github.com/high-moctane/lab_scup2020/agent"
 	"github.com/high-moctane/lab_scup2020/environment"
+	"github.com/high-moctane/lab_scup2020/logger"
 	"github.com/high-moctane/lab_scup2020/utils"
 )
 
@@ -219,6 +220,8 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	returns += r
 
 	// Run
+	logger.Get().Info("rl start episode %d", episode)
+
 	var isFinish bool
 
 	for step := 0; step == -1 || step < maxStep; step++ {

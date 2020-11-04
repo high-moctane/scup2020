@@ -2,7 +2,8 @@ TARGET := \
 	serialtest \
 	serialmotortest \
 	serialspeedtest \
-	cartpoletest
+	cartpoletest \
+	scup
 
 SUBDIR := \
 	agent \
