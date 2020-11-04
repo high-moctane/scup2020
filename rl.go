@@ -26,6 +26,7 @@ type RL struct {
 
 	agentUp, agentDown                 agent.Agent
 	rewardFuncUp, rewardFuncDown       func(s []float64) float64
+	isFinishFuncUp, isFinishFuncDown   func(s []float64) bool
 	agentUpDataPath, agentDownDataPath string
 	agentSaveFreq                      int
 
@@ -63,6 +64,10 @@ func NewRL() (*RL, error) {
 	// Reward func
 	rewardFuncUp := env.RewardFuncUp()
 	rewardFuncDown := env.RewardFuncDown()
+
+	// IsFinishFunc
+	isFinishFuncUp := env.IsFinishUp
+	isFinishFuncDown := env.IsFinishDown
 
 	// AgentDataPath and loading agent data
 	agentDataNotFoundError := &agent.AgentDataNotFound{}
@@ -111,6 +116,8 @@ func NewRL() (*RL, error) {
 		agentDown,
 		rewardFuncUp,
 		rewardFuncDown,
+		isFinishFuncUp,
+		isFinishFuncDown,
 		agentUpDataPath,
 		agentDownDataPath,
 		agentSaveFreq,
@@ -227,6 +234,7 @@ func (rl *RL) RunEpisode(ctx context.Context, episode, mode int) (returns float6
 	var ag agent.Agent
 	var maxStep int
 	var rewardFunc func(s []float64) float64
+	var isFinishFunc func(s []float64) bool
 	var agentDataPath string
 
 	switch mode {
@@ -234,11 +242,13 @@ func (rl *RL) RunEpisode(ctx context.Context, episode, mode int) (returns float6
 		ag = rl.agentUp
 		maxStep = rl.maxStepUp
 		rewardFunc = rl.rewardFuncUp
+		isFinishFunc = rl.isFinishFuncUp
 		agentDataPath = rl.agentUpDataPath
 	case RLRunDown:
 		ag = rl.agentDown
 		maxStep = rl.maxStepDown
 		rewardFunc = rl.rewardFuncDown
+		isFinishFunc = rl.isFinishFuncDown
 		agentDataPath = rl.agentDownDataPath
 	}
 
@@ -287,10 +297,7 @@ func (rl *RL) RunEpisode(ctx context.Context, episode, mode int) (returns float6
 			break
 		}
 
-		isFinish, err = rl.env.IsFinish(s2)
-		if err != nil {
-			return
-		}
+		isFinish = isFinishFunc(s2)
 
 		s1 = s2
 		a1 = a2

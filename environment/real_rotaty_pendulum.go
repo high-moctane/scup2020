@@ -17,6 +17,8 @@ const RRPInitialBaseAngleRange = math.Pi / 32
 const RRPMaxBaseAngleRange = math.Pi / 2
 const RRPMaxTopPendulumAngleRange = math.Pi / 32
 const RRPMaxTopPendulumVelocityRange = 10
+const RRPMaxBottomPendulumAngleRange = math.Pi * 31 / 32
+const RRPMaxBottomPendulumVelocityRange = 0.1 * math.Pi
 
 type RRPSerialTxError struct {
 	n int
@@ -162,19 +164,29 @@ func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
 	return nil
 }
 
-func (rrp *RealRotatyPendulum) IsFinish(s []float64) (bool, error) {
+func (rrp *RealRotatyPendulum) IsFinishUp(s []float64) bool {
 	baseAngle := math.Abs(s[0])
 	pendAngle := math.Abs(s[1])
 	pendVel := math.Abs(s[3])
 
 	res := baseAngle >= RRPMaxBaseAngleRange ||
 		pendAngle < RRPMaxTopPendulumAngleRange && pendVel > RRPMaxTopPendulumVelocityRange
-	return res, nil
+	return res
+}
+
+func (rrp *RealRotatyPendulum) IsFinishDown(s []float64) bool {
+	baseAngle := math.Abs(s[0])
+	pendAngle := math.Abs(s[1])
+	pendVel := math.Abs(s[3])
+
+	res := baseAngle < RRPInitialBaseAngleRange &&
+		pendAngle > RRPMaxBottomPendulumAngleRange && pendVel < RRPMaxBottomPendulumVelocityRange
+	return res
 }
 
 func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
 	return func(s []float64) float64 {
-		if isFinish, _ := rrp.IsFinish(s); isFinish {
+		if isFinish := rrp.IsFinishUp(s); isFinish {
 			return rrp.badReward
 		}
 		baseAngle := math.Abs(s[0])
@@ -185,7 +197,7 @@ func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
 
 func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {
 	return func(s []float64) float64 {
-		if isFinish, _ := rrp.IsFinish(s); isFinish {
+		if isFinish := rrp.IsFinishDown(s); isFinish {
 			return rrp.goodReward
 		}
 		baseAngle := math.Abs(s[0])
