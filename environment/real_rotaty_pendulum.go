@@ -48,7 +48,7 @@ type RealRotatyPendulum struct {
 
 	s, sPrev *RRPState
 
-	badReward float64
+	goodReward, badReward float64
 }
 
 func (rrp *RealRotatyPendulum) Init() error {
@@ -67,6 +67,11 @@ func (rrp *RealRotatyPendulum) Init() error {
 	}
 	dt := time.Duration(dtRaw) * time.Second
 
+	goodReward, err := utils.GetEnvFloat64("SCUP_RRP_BAD_REWARD")
+	if err != nil {
+		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
+	}
+
 	badReward, err := utils.GetEnvFloat64("SCUP_RRP_BAD_REWARD")
 	if err != nil {
 		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
@@ -77,6 +82,7 @@ func (rrp *RealRotatyPendulum) Init() error {
 		dt,
 		nil,
 		nil,
+		goodReward,
 		badReward,
 	}
 
@@ -165,7 +171,7 @@ func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
 func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {
 	return func(s []float64) float64 {
 		if isFinish, _ := rrp.IsFinish(s); isFinish {
-			return rrp.badReward
+			return rrp.goodReward
 		}
 		baseAngle := math.Abs(s[0])
 		pendAngle := math.Abs(s[1])

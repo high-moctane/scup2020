@@ -98,7 +98,7 @@ func NewRL() (*RL, error) {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
 
-	maxStepDown, err := utils.GetEnvInt("SCUP_RL_MAX_STEP_UP")
+	maxStepDown, err := utils.GetEnvInt("SCUP_RL_MAX_STEP_DOWN")
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
@@ -253,6 +253,8 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 		a1 = a2
 		returns += r
 	}
+
+	logger.Get().Info("rl end episode %d with returns %v", episode, returns)
 
 	// Save
 	if rl.agentSaveFreq == -1 || episode%rl.agentSaveFreq == 0 {

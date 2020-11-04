@@ -8,6 +8,7 @@ import (
 	scup "github.com/high-moctane/lab_scup2020"
 	"github.com/high-moctane/lab_scup2020/logger"
 	"github.com/high-moctane/lab_scup2020/utils"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -18,6 +19,14 @@ func main() {
 }
 
 func run(args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("invalid args")
+	}
+
+	if err := godotenv.Load(args[1]); err != nil {
+		return fmt.Errorf("dotenv failed: %w", err)
+	}
+
 	rl, err := scup.NewRL()
 	if err != nil {
 		return fmt.Errorf("run error: %w", err)
