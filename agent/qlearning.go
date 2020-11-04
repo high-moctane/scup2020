@@ -245,8 +245,12 @@ func (ql *QLearning) Load(src string) error {
 	pathError := new(os.PathError)
 
 	f, err := os.Open(src)
-	if err != nil && !errors.As(err, &pathError) {
-		return NewAgentDataNotFound(src)
+	if err != nil {
+		if errors.As(err, &pathError) {
+			return NewAgentDataNotFound(src)
+		} else {
+			return fmt.Errorf("cannot load qlearning from %s: %w", src, err)
+		}
 	}
 	defer f.Close()
 
