@@ -3,6 +3,7 @@ package lab_scup2020
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/high-moctane/lab_scup2020/agent"
 	"github.com/high-moctane/lab_scup2020/environment"
@@ -19,8 +20,10 @@ var EndOfEpisode = errors.New("end of episode")
 type RL struct {
 	env environment.Environment
 
-	agentUp, agentDown           agent.Agent
-	rewardFuncUp, rewardFuncDown func(s []float64) float64
+	agentUp, agentDown                 agent.Agent
+	rewardFuncUp, rewardFuncDown       func(s []float64) float64
+	agentUpDataPath, agentDownDataPath string
+	agentSaveFreq                      int
 
 	maxEpisode             int
 	maxStepUp, maxStepDown int
@@ -54,6 +57,21 @@ func NewRL() (*RL, error) {
 	rewardFuncUp := env.RewardFuncUp()
 	rewardFuncDown := env.RewardFuncDown()
 
+	agentUpDataPath, ok := os.LookupEnv("SCUP_RL_AGENT_UP_DATA_PATH")
+	if !ok {
+		return nil, fmt.Errorf("new rl failed: %w", err)
+	}
+
+	agentDownDataPath, ok := os.LookupEnv("SCUP_RL_AGENT_UP_DATA_PATH")
+	if !ok {
+		return nil, fmt.Errorf("new rl failed: %w", err)
+	}
+
+	agentSaveFreq, err := utils.GetEnvInt("SCUP_RL_AGENT_SAVE_FREQUENT")
+	if err != nil {
+		return nil, fmt.Errorf("new rl failed: %w", err)
+	}
+
 	maxEpisode, err := utils.GetEnvInt("SCUP_RL_MAX_EPISODE")
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
@@ -75,6 +93,9 @@ func NewRL() (*RL, error) {
 		agentDown,
 		rewardFuncUp,
 		rewardFuncDown,
+		agentUpDataPath,
+		agentDownDataPath,
+		agentSaveFreq,
 		maxEpisode,
 		maxStepUp,
 		maxStepDown,
@@ -85,25 +106,37 @@ func NewRL() (*RL, error) {
 
 func (rl *RL) Run() error {
 	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
+		// Up
 		if err := rl.env.Reset(); err != nil {
-			return err
+			return fmt.Errorf("rl run error: %w", err)
 		}
 
 		returns, err := rl.RunEpisode(RLRunUp)
 		if err != nil && !errors.Is(EndOfEpisode, err) {
-			return err
+			return fmt.Errorf("rl run error: %w", err)
 		}
 		fmt.Println("returnsUp:", returns)
 
+		// Down
 		if err := rl.env.Reset(); err != nil {
-			return err
+			return fmt.Errorf("rl run error: %w", err)
 		}
 
 		returns, err = rl.RunEpisode(RLRunDown)
 		if err != nil && !errors.Is(EndOfEpisode, err) {
-			return err
+			return fmt.Errorf("rl run error: %w", err)
 		}
 		fmt.Println("returnsDown:", returns)
+
+		// Save
+		if rl.agentSaveFreq == -1 || episode%rl.agentSaveFreq == 0 {
+			if err := rl.agentUp.Save(rl.agentUpDataPath); err != nil {
+				return fmt.Errorf("rl run error: %w", err)
+			}
+			if err := rl.agentDown.Save(rl.agentDownDataPath); err != nil {
+				return fmt.Errorf("rl run error: %w", err)
+			}
+		}
 	}
 
 	return nil
