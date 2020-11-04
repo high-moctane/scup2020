@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/high-moctane/lab_scup2020/logger"
+	_ "github.com/high-moctane/lab_scup2020/logger"
 	utils "github.com/high-moctane/lab_scup2020/utils"
 )
 
@@ -239,7 +239,7 @@ func (ql *QLearning) Save(dst string) error {
 		return fmt.Errorf("cannot save qlearning to %s: %w", dst, err)
 	}
 
-	logger.Get().Info("agent saved to %s", dst)
+	// logger.Get().Info("agent saved to %s", dst)
 
 	return nil
 }
@@ -266,7 +266,7 @@ func (ql *QLearning) Load(src string) error {
 
 	ql.QTable = data.QTable
 
-	logger.Get().Info("agent loaded to %s", src)
+	// logger.Get().Info("agent loaded to %s", src)
 
 	return nil
 }

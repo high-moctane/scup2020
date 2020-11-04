@@ -17,7 +17,10 @@ RASPI_ENV := GOOS=linux GOARCH=arm GOARM=6
 	all \
 	build \
 	build-raspi \
+	build-scup-raspi \
 	deploy \
+	deploy-envs \
+	deploy-scup \
 	test \
 	vet \
 	clean
@@ -40,13 +43,22 @@ endef
 build-raspi:
 	$(foreach target,$(TARGET),$(call template_build_raspi,$(target)))
 
+build-scup-raspi:
+	cd bin/scup && $(RASPI_ENV) go build -o scup-raspi
+
 define template_scp
 	scp bin/$(1)/$(1)-raspi $(RASPI)/$(target)-raspi
 
 endef
 
-deploy:
+deploy: deploy-envs
 	$(foreach target,$(TARGET),$(call template_scp,$(target)))
+
+deploy-envs:
+	scp -r envs $(RASPI)
+
+deploy-scup:
+	scp bin/scup/scup-raspi  $(RASPI)/scup-raspi
 
 test:
 	go test

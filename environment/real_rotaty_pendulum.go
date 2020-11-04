@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"log"
 	"math"
 	"time"
 
@@ -46,7 +47,8 @@ type RealRotatyPendulum struct {
 
 	dt time.Duration
 
-	s, sPrev *RRPState
+	s, sPrev          *RRPState
+	initPendulumAngle float64
 
 	goodReward, badReward float64
 }
@@ -65,7 +67,7 @@ func (rrp *RealRotatyPendulum) Init() error {
 	if err != nil {
 		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
 	}
-	dt := time.Duration(dtRaw) * time.Second
+	dt := time.Duration(dtRaw) * time.Millisecond
 
 	goodReward, err := utils.GetEnvFloat64("SCUP_RRP_BAD_REWARD")
 	if err != nil {
@@ -77,25 +79,35 @@ func (rrp *RealRotatyPendulum) Init() error {
 		return fmt.Errorf("cannot init real rotaty pendulum: %w", err)
 	}
 
-	rrp = &RealRotatyPendulum{
-		seri,
-		dt,
-		nil,
-		nil,
-		goodReward,
-		badReward,
+	rrp.seri = seri
+	rrp.dt = dt
+	rrp.goodReward = goodReward
+	rrp.badReward = badReward
+
+	for rrp.sPrev == nil {
+		rrp.RunStep([]float64{0})
 	}
+	rrp.initPendulumAngle = rrp.s.ToState(rrp.sPrev)[3]
 
 	return nil
 }
 
 func (rrp *RealRotatyPendulum) Reset() error {
+	log.Println("rrp reset start")
+
 	for {
 		if rrp.s != nil && math.Abs(rrp.s.BaseAngle) < RRPInitialBaseAngleRange {
+			rrp.RunStep([]float64{0})
+			log.Println("rrp reset end")
 			return nil
 		}
 
-		if err := rrp.RunStep([]float64{RRPResetInput}); err != nil {
+		direction := 1.
+		if rrp.s.BaseAngle > 0 {
+			direction = -1
+		}
+
+		if err := rrp.RunStep([]float64{direction * RRPResetInput}); err != nil {
 			return fmt.Errorf("reset error: %w", err)
 		}
 	}
@@ -106,7 +118,8 @@ func (rrp *RealRotatyPendulum) State() (s []float64, err error) {
 }
 
 func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
-	time.Sleep(rrp.dt)
+	// TODO
+	time.Sleep(20 * time.Millisecond)
 
 	// Send
 	if len(a) != 1 {
@@ -163,8 +176,8 @@ func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
 			return rrp.badReward
 		}
 		baseAngle := math.Abs(s[0])
-		pendAngle := math.Abs(s[1])
-		return -pendAngle + math.Pi/2. - 0.01*baseAngle
+		relPendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
+		return -relPendAngle + math.Pi/2. - 0.01*baseAngle
 	}
 }
 
@@ -174,8 +187,8 @@ func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {
 			return rrp.goodReward
 		}
 		baseAngle := math.Abs(s[0])
-		pendAngle := math.Abs(s[1])
-		return pendAngle - math.Pi/2. - 0.01*baseAngle
+		relPendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
+		return relPendAngle - math.Pi/2. - 0.01*baseAngle
 	}
 }
 
@@ -189,6 +202,16 @@ func (rrp *RealRotatyPendulum) Close() error {
 	}
 
 	return nil
+}
+
+func relativeAngle(theta, other float64) float64 {
+	res := other - theta
+	if res < -math.Pi {
+		res += 2 * math.Pi
+	} else if res > math.Pi {
+		res -= 2 * math.Pi
+	}
+	return res
 }
 
 const RRPMaxEncoder = 200000

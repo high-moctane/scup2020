@@ -15,7 +15,7 @@ const (
 	Panic
 )
 
-var once sync.Once
+var once sync.Once = sync.Once{}
 var logger *Logger
 
 type Logger struct {

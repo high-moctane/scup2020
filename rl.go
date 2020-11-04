@@ -3,11 +3,12 @@ package lab_scup2020
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/high-moctane/lab_scup2020/agent"
 	"github.com/high-moctane/lab_scup2020/environment"
-	"github.com/high-moctane/lab_scup2020/logger"
+	_ "github.com/high-moctane/lab_scup2020/logger"
 	"github.com/high-moctane/lab_scup2020/utils"
 )
 
@@ -185,10 +186,19 @@ func (rl *RL) RunEpisodeDown(episode int) (returns float64, err error) {
 
 func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	// Reset
-	if err = rl.env.Reset(); err != nil {
-		err = fmt.Errorf("rl run error: %w", err)
-		return
+	var rxError *environment.RRPSerialRxError
+	isReseted := false
+	for !isReseted {
+		if err = rl.env.Reset(); err != nil {
+			if errors.As(err, &rxError) {
+				continue
+			}
+			err = fmt.Errorf("rl run error: %w", err)
+			return
+		}
+		isReseted = true
 	}
+	fmt.Println("powa")
 
 	// Init
 	var ag agent.Agent
@@ -220,12 +230,16 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 	returns += r
 
 	// Run
-	logger.Get().Info("rl start episode %d", episode)
+	// logger.Get().Info("rl start episode %d", episode)
+	log.Printf("rl start: episode %d", episode)
 
 	var isFinish bool
 
 	for step := 0; step == -1 || step < maxStep; step++ {
 		if err = rl.env.RunStep(a1); err != nil {
+			if errors.As(err, &rxError) {
+				continue
+			}
 			return
 		}
 
@@ -254,7 +268,8 @@ func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
 		returns += r
 	}
 
-	logger.Get().Info("rl end episode %d with returns %v", episode, returns)
+	// logger.Get().Info("rl end episode %d with returns %v", episode, returns)
+	log.Printf("rl end: episode %d, returns %v", episode, returns)
 
 	// Save
 	if rl.agentSaveFreq == -1 || episode%rl.agentSaveFreq == 0 {

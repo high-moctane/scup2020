@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/high-moctane/lab_scup2020/logger"
+	_ "github.com/high-moctane/lab_scup2020/logger"
 )
 
 type Environment interface {
@@ -34,7 +34,7 @@ func SelectEnvironment() (Environment, error) {
 		return nil, fmt.Errorf("invalid env name")
 	}
 
-	logger.Get().Info("env name: %s", envName)
+	// logger.Get().Info("env name: %s", envName)
 
 	return env, nil
 }

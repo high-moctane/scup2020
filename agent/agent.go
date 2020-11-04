@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/high-moctane/lab_scup2020/logger"
+	_ "github.com/high-moctane/lab_scup2020/logger"
 )
 
 type Agent interface {
@@ -30,7 +30,7 @@ func SelectAgent() (Agent, error) {
 		return nil, fmt.Errorf("invalid agent name")
 	}
 
-	logger.Get().Info("agent name: %s", agentName)
+	// logger.Get().Info("agent name: %s", agentName)
 
 	return res, nil
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	environ "github.com/high-moctane/lab_scup2020/environment"
 	"github.com/tarm/serial"
 )
 
@@ -31,9 +32,21 @@ func main() {
 
 		buf := make([]byte, 14)
 		n, err = s.Read(buf)
+		if n != 14 {
+			continue
+		}
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("rx %v: %v\n", n, buf)
+		envData, err := environ.NewRRPEncodedReceiveData(buf)
+		if err != nil {
+			log.Fatal(err)
+		}
+		rcvData, err := envData.ToRRPReceiveData()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Printf("rx %v: %v\n", n, rcvData.ToRRPState())
 	}
 }

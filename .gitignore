@@ -27,3 +27,5 @@ result/
 /bin/serialspeedtest/serialspeedtest-raspi
 /bin/cartpoletest/cartpoletest
 /bin/cartpoletest/cartpoletest-raspi
+/bin/scup/scup
+/bin/scup/scup-raspi
