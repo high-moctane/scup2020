@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := rl.Run(); err != nil {
+	if err := rl.RunUpDown(); err != nil {
 		log.Fatal(err)
 	}
 }

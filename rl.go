@@ -104,57 +104,80 @@ func NewRL() (*RL, error) {
 	return res, nil
 }
 
-func (rl *RL) Run() error {
+func (rl *RL) RunUpDown() error {
 	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
-		// Up
-		if err := rl.env.Reset(); err != nil {
-			return fmt.Errorf("rl run error: %w", err)
-		}
-
-		returns, err := rl.RunEpisode(RLRunUp)
+		returns, err := rl.RunEpisodeUp(episode)
 		if err != nil && !errors.Is(EndOfEpisode, err) {
 			return fmt.Errorf("rl run error: %w", err)
 		}
 		fmt.Println("returnsUp:", returns)
 
-		// Down
-		if err := rl.env.Reset(); err != nil {
-			return fmt.Errorf("rl run error: %w", err)
-		}
-
-		returns, err = rl.RunEpisode(RLRunDown)
+		returns, err = rl.RunEpisodeDown(episode)
 		if err != nil && !errors.Is(EndOfEpisode, err) {
 			return fmt.Errorf("rl run error: %w", err)
 		}
 		fmt.Println("returnsDown:", returns)
-
-		// Save
-		if rl.agentSaveFreq == -1 || episode%rl.agentSaveFreq == 0 {
-			if err := rl.agentUp.Save(rl.agentUpDataPath); err != nil {
-				return fmt.Errorf("rl run error: %w", err)
-			}
-			if err := rl.agentDown.Save(rl.agentDownDataPath); err != nil {
-				return fmt.Errorf("rl run error: %w", err)
-			}
-		}
 	}
 
 	return nil
 }
 
-func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
+func (rl *RL) RunUp() error {
+	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
+		returns, err := rl.RunEpisodeUp(episode)
+		if err != nil && !errors.Is(EndOfEpisode, err) {
+			return fmt.Errorf("rl run error: %w", err)
+		}
+		fmt.Println("returnsUp:", returns)
+	}
+
+	return nil
+}
+
+func (rl *RL) RunDown() error {
+	for episode := 0; rl.maxEpisode == -1 || episode < rl.maxEpisode; episode++ {
+		returns, err := rl.RunEpisodeDown(episode)
+		if err != nil && !errors.Is(EndOfEpisode, err) {
+			return fmt.Errorf("rl run error: %w", err)
+		}
+		fmt.Println("returnsDown:", returns)
+	}
+
+	return nil
+}
+
+func (rl *RL) RunEpisodeUp(episode int) (returns float64, err error) {
+	return rl.RunEpisode(episode, RLRunUp)
+}
+
+func (rl *RL) RunEpisodeDown(episode int) (returns float64, err error) {
+	return rl.RunEpisode(episode, RLRunUp)
+}
+
+func (rl *RL) RunEpisode(episode, mode int) (returns float64, err error) {
+	// Reset
+	if err = rl.env.Reset(); err != nil {
+		err = fmt.Errorf("rl run error: %w", err)
+		return
+	}
+
+	// Init
 	var ag agent.Agent
 	var maxStep int
 	var rewardFunc func(s []float64) float64
+	var agentDataPath string
+
 	switch mode {
 	case RLRunUp:
 		ag = rl.agentUp
 		maxStep = rl.maxStepUp
 		rewardFunc = rl.rewardFuncUp
+		agentDataPath = rl.agentUpDataPath
 	case RLRunDown:
 		ag = rl.agentDown
 		maxStep = rl.maxStepDown
 		rewardFunc = rl.rewardFuncDown
+		agentDataPath = rl.agentDownDataPath
 	}
 
 	var s1, s2, a1, a2 []float64
@@ -167,6 +190,7 @@ func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
 
 	returns += r
 
+	// Run
 	for step := 0; step == -1 || step < maxStep; step++ {
 		if err = rl.env.RunStep(a1); err != nil {
 			return
@@ -195,6 +219,14 @@ func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
 
 		s1 = s2
 		a1 = a2
+	}
+
+	// Save
+	if rl.agentSaveFreq == -1 || episode%rl.agentSaveFreq == 0 {
+		if err = ag.Save(agentDataPath); err != nil {
+			err = fmt.Errorf("rl run error: %w", err)
+			return
+		}
 	}
 
 	return

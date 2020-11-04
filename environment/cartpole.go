@@ -50,7 +50,7 @@ func (*Cartpole) IsFinish(s []float64) (bool, error) {
 	x := s[0]
 	// theta := s[1]
 	// thetaDot := s[3]
-	return math.Abs(x) > 3., nil
+	return math.Abs(x) > 2., nil
 	// return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 10, nil
 }
 

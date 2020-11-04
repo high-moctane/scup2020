@@ -17,6 +17,8 @@
 result/
 *.result
 
+*.gob
+
 /bin/serialtest/serialtest
 /bin/serialtest/serialtest-raspi
 /bin/serialmotortest/serialmotortest

@@ -165,7 +165,7 @@ type QLearning struct {
 	actions        [][]float64
 	actionsIndices map[string]int
 
-	qtable [][]float64
+	QTable [][]float64
 }
 
 func (ql *QLearning) Init() error {
@@ -177,7 +177,7 @@ func (ql *QLearning) Init() error {
 	if err != nil {
 		return fmt.Errorf("cannot init qlearning: %w", err)
 	}
-	ql.qtable = qtable
+	ql.QTable = qtable
 
 	return nil
 }
@@ -190,7 +190,7 @@ func (ql *QLearning) Action(s []float64) []float64 {
 		idx = rand.Intn(ql.actionSize)
 	} else {
 		sIdx := getStateIndex(ql.stateThresh, ql.stateNumber, s)
-		idx = argmax(ql.qtable[sIdx])
+		idx = argmax(ql.QTable[sIdx])
 	}
 
 	return ql.actions[idx]
@@ -205,15 +205,15 @@ func (ql *QLearning) Learn(s1, a1 []float64, r float64, s2, a2 []float64) {
 
 	a1Idx := ql.actionsIndices[encodeFloat64Slice(a1)]
 
-	max := ql.qtable[s2Idx][0]
+	max := ql.QTable[s2Idx][0]
 	for i := 1; i < ql.actionSize; i++ {
-		if max < ql.qtable[s2Idx][i] {
-			max = ql.qtable[s2Idx][i]
+		if max < ql.QTable[s2Idx][i] {
+			max = ql.QTable[s2Idx][i]
 		}
 	}
 
-	ql.qtable[s1Idx][a1Idx] =
-		(1.-alpha)*ql.qtable[s1Idx][a1Idx] + alpha*(r+gamma*max)
+	ql.QTable[s1Idx][a1Idx] =
+		(1.-alpha)*ql.QTable[s1Idx][a1Idx] + alpha*(r+gamma*max)
 }
 
 func (ql *QLearning) Save(dst string) error {
@@ -225,11 +225,7 @@ func (ql *QLearning) Save(dst string) error {
 
 	buf := bytes.NewBuffer(nil)
 
-	type Alias QLearning
-	err = gob.NewEncoder(buf).Encode(struct {
-		QTable [][]float64
-		*Alias
-	}{QTable: ql.qtable, Alias: (*Alias)(ql)})
+	err = gob.NewEncoder(buf).Encode(ql)
 	if err != nil {
 		return fmt.Errorf("cannot save qlearning to %s: %w", dst, err)
 	}
@@ -253,17 +249,12 @@ func (ql *QLearning) Load(src string) error {
 
 	r := bufio.NewReader(f)
 
-	type Alias QLearning
-	data := struct {
-		QLearning [][]float64
-		*Alias
-	}{Alias: (*Alias)(ql)}
-
+	var data QLearning
 	if err := gob.NewDecoder(r).Decode(&data); err != nil {
 		return fmt.Errorf("cannot load qlearning from %s: %w", src, err)
 	}
 
-	ql.qtable = data.qtable
+	ql.QTable = data.QTable
 
 	return nil
 }
