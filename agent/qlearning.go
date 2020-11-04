@@ -163,11 +163,9 @@ type QLearning struct {
 	actionsIndices map[string]int
 
 	qtable [][]float64
-
-	rewardFunc func(s []float64) float64
 }
 
-func (ql *QLearning) Init(rewardFunc func(s []float64) float64) error {
+func (ql *QLearning) Init() error {
 	if err := ql.loadEnv(); err != nil {
 		return fmt.Errorf("cannot init qlearning: %w", err)
 	}
@@ -177,8 +175,6 @@ func (ql *QLearning) Init(rewardFunc func(s []float64) float64) error {
 		return fmt.Errorf("cannot init qlearning: %w", err)
 	}
 	ql.qtable = qtable
-
-	ql.rewardFunc = rewardFunc
 
 	return nil
 }
@@ -195,10 +191,6 @@ func (ql *QLearning) Action(s []float64) []float64 {
 	}
 
 	return ql.actions[idx]
-}
-
-func (ql *QLearning) Reward(s []float64) float64 {
-	return ql.rewardFunc(s)
 }
 
 func (ql *QLearning) Learn(s1, a1 []float64, r float64, s2, a2 []float64) {

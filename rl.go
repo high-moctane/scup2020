@@ -17,8 +17,10 @@ const (
 var EndOfEpisode = errors.New("end of episode")
 
 type RL struct {
-	env                environment.Environment
-	agentUp, agentDown agent.Agent
+	env environment.Environment
+
+	agentUp, agentDown           agent.Agent
+	rewardFuncUp, rewardFuncDown func(s []float64) float64
 
 	maxEpisode             int
 	maxStepUp, maxStepDown int
@@ -37,7 +39,7 @@ func NewRL() (*RL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
-	if err := agentUp.Init(env.RewardFuncUp()); err != nil {
+	if err := agentUp.Init(); err != nil {
 		return nil, fmt.Errorf("new agentup failed: %w", err)
 	}
 
@@ -45,9 +47,12 @@ func NewRL() (*RL, error) {
 	if err != nil {
 		return nil, fmt.Errorf("new rl failed: %w", err)
 	}
-	if err := agentDown.Init(env.RewardFuncDown()); err != nil {
+	if err := agentDown.Init(); err != nil {
 		return nil, fmt.Errorf("new agentup failed: %w", err)
 	}
+
+	rewardFuncUp := env.RewardFuncUp()
+	rewardFuncDown := env.RewardFuncDown()
 
 	maxEpisode, err := utils.GetEnvInt("SCUP_RL_MAX_EPISODE")
 	if err != nil {
@@ -68,6 +73,8 @@ func NewRL() (*RL, error) {
 		env,
 		agentUp,
 		agentDown,
+		rewardFuncUp,
+		rewardFuncDown,
 		maxEpisode,
 		maxStepUp,
 		maxStepDown,
@@ -105,13 +112,16 @@ func (rl *RL) Run() error {
 func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
 	var ag agent.Agent
 	var maxStep int
+	var rewardFunc func(s []float64) float64
 	switch mode {
 	case RLRunUp:
 		ag = rl.agentUp
 		maxStep = rl.maxStepUp
+		rewardFunc = rl.rewardFuncUp
 	case RLRunDown:
 		ag = rl.agentDown
 		maxStep = rl.maxStepDown
+		rewardFunc = rl.rewardFuncDown
 	}
 
 	var s1, s2, a1, a2 []float64
@@ -119,7 +129,7 @@ func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
 	if err != nil {
 		return
 	}
-	r := ag.Reward(s1)
+	r := rewardFunc(s1)
 	a1 = ag.Action(s1)
 
 	returns += r
@@ -134,7 +144,7 @@ func (rl *RL) RunEpisode(mode int) (returns float64, err error) {
 			return
 		}
 
-		r = ag.Reward(s2)
+		r = rewardFunc(s2)
 		returns += r
 
 		a2 = ag.Action(s2)

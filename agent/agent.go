@@ -6,10 +6,9 @@ import (
 )
 
 type Agent interface {
-	Init(rewardFunc func(s []float64) float64) error
+	Init() error
 	Reset()
 	Action(s []float64) (a []float64)
-	Reward(s []float64) float64
 	Learn(s1, a1 []float64, r float64, s2, a2 []float64)
 }
 
