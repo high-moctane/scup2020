@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"time"
 
@@ -126,7 +125,7 @@ func (rrp *RealRotatyPendulum) State() (s []float64, err error) {
 
 func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
 	// TODO
-	time.Sleep(20 * time.Millisecond)
+	time.Sleep(rrp.dt)
 
 	// Send
 	if len(a) != 1 {
@@ -164,8 +163,6 @@ func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
 	// Update
 	rrp.s, rrp.sPrev = s, rrp.s
 
-	log.Println(rrp.initPendulumAngle, rrp.s)
-
 	return nil
 }
 
@@ -196,7 +193,7 @@ func (rrp *RealRotatyPendulum) RewardFuncUp() func(s []float64) float64 {
 		}
 		baseAngle := math.Abs(s[0])
 		relPendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
-		return -relPendAngle + math.Pi/2. - 0.01*baseAngle - 1.0
+		return -relPendAngle + math.Pi/2. - 0.01*baseAngle - 0.1
 	}
 }
 
@@ -207,7 +204,7 @@ func (rrp *RealRotatyPendulum) RewardFuncDown() func(s []float64) float64 {
 		}
 		baseAngle := math.Abs(s[0])
 		relPendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
-		return relPendAngle - math.Pi/2. - 0.01*baseAngle - 1.0
+		return relPendAngle - math.Pi/2. - 0.01*baseAngle - 0.1
 	}
 }
 

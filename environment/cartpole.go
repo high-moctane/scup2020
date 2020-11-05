@@ -2,7 +2,6 @@ package environment
 
 import (
 	"fmt"
-	"log"
 	"math"
 )
 
@@ -43,7 +42,6 @@ func (cp *Cartpole) RunStep(a []float64) error {
 	}
 
 	cp.s = cp.solveRungeKutta(cp.s, a[0], cp.dt)
-	log.Println(cp.s)
 
 	return nil
 }
@@ -71,18 +69,18 @@ func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {
 		}
 		x := s[0]
 		theta := s[1]
-		return -math.Abs(theta) + math.Pi/2. - 0.01*math.Abs(x)
+		return -math.Abs(theta) + math.Pi/2. - 0.01*math.Abs(x) - 0.1
 	}
 }
 
 func (cp *Cartpole) RewardFuncDown() func(s []float64) float64 {
 	return func(s []float64) float64 {
 		if isFinish := cp.IsFinishDown(s); isFinish {
-			return -1000.
+			return 1000.
 		}
 		x := s[0]
 		theta := s[1]
-		return math.Abs(theta) + math.Pi/2. - 0.01*math.Abs(x)
+		return math.Abs(theta) - math.Pi/2. - 0.01*math.Abs(x) - 0.1
 	}
 }
 

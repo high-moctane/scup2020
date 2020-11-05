@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -27,6 +28,7 @@ func run(args []string) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+	wg := new(sync.WaitGroup)
 
 	if len(args) != 2 {
 		return fmt.Errorf("invalid args")
@@ -49,7 +51,10 @@ func run(args []string) error {
 
 	time.Sleep(2 * time.Second)
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		if err := rl.Run(ctx, mode); err != nil {
 			log.Println(fmt.Errorf("run error: %w", err))
 			return
@@ -66,6 +71,7 @@ func run(args []string) error {
 	)
 
 	<-sig
+	wg.Wait()
 	log.Println("Interrupted")
 
 	return nil

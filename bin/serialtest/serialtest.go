@@ -21,6 +21,8 @@ func main() {
 	}
 	defer s.Close()
 
+	sPrev := &environ.RRPState{}
+
 	for {
 		time.Sleep(500 * time.Millisecond)
 
@@ -49,5 +51,7 @@ func main() {
 
 		fmt.Printf("rx %v: %v\n", n, rcvData)
 		fmt.Printf("rx %v: %v\n", n, rcvData.ToRRPState())
+		fmt.Printf("rx %v: %v\n", n, rcvData.ToRRPState().ToState(sPrev))
+		sPrev = rcvData.ToRRPState()
 	}
 }
