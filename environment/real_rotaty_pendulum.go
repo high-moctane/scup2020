@@ -166,7 +166,7 @@ func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
 
 func (rrp *RealRotatyPendulum) IsFinishUp(s []float64) bool {
 	baseAngle := math.Abs(s[0])
-	pendAngle := math.Abs(s[1])
+	pendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
 	pendVel := math.Abs(s[3])
 
 	res := baseAngle >= RRPMaxBaseAngleRange ||
@@ -176,7 +176,7 @@ func (rrp *RealRotatyPendulum) IsFinishUp(s []float64) bool {
 
 func (rrp *RealRotatyPendulum) IsFinishDown(s []float64) bool {
 	baseAngle := math.Abs(s[0])
-	pendAngle := math.Abs(s[1])
+	pendAngle := math.Abs(relativeAngle(rrp.initPendulumAngle, s[1]))
 	pendVel := math.Abs(s[3])
 
 	res := baseAngle < RRPInitialBaseAngleRange &&

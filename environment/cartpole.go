@@ -2,6 +2,7 @@ package environment
 
 import (
 	"fmt"
+	"log"
 	"math"
 )
 
@@ -18,7 +19,7 @@ func (cp *Cartpole) Init() error {
 	cp.g = 9.80665  // 重力加速度
 	cp.m = 0.1      // 棒の質量
 	cp.l = 0.5      // 棒の長さ
-	cp.dt = 0.02    // 制御周期
+	cp.dt = 0.05    // 制御周期
 	cartMass := 1.0 // 台車の質量
 	cp.ml = cp.m * cp.l
 	cp.mass = cp.m + cartMass
@@ -42,24 +43,25 @@ func (cp *Cartpole) RunStep(a []float64) error {
 	}
 
 	cp.s = cp.solveRungeKutta(cp.s, a[0], cp.dt)
+	log.Println(cp.s)
 
 	return nil
 }
 
 func (*Cartpole) IsFinishUp(s []float64) bool {
-	x := s[0]
-	// theta := s[1]
-	// thetaDot := s[3]
-	return math.Abs(x) > 2.
-	// return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 10, nil
+	x := math.Abs(s[0])
+	theta := math.Abs(s[1])
+	thetaDot := math.Abs(s[3])
+	return x >= math.Pi/2. ||
+		theta < math.Pi/32. && thetaDot > 10.
 }
 
 func (*Cartpole) IsFinishDown(s []float64) bool {
-	x := s[0]
-	// theta := s[1]
-	// thetaDot := s[3]
-	return math.Abs(x) > 2.
-	// return math.Abs(x) > 2. || math.Abs(theta) < math.Pi/8 && math.Abs(thetaDot) > 10, nil
+	x := math.Abs(s[0])
+	theta := math.Abs(s[1])
+	thetaDot := math.Abs(s[3])
+	return x < math.Pi/32. &&
+		theta > math.Pi*31./32. && thetaDot < 0.2*math.Pi
 }
 
 func (cp *Cartpole) RewardFuncUp() func(s []float64) float64 {

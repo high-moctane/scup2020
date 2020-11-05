@@ -18,6 +18,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Println("powa")
+
 	rl, err := scup.NewRL()
 	if err != nil {
 		log.Fatal(err)
