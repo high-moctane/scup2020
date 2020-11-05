@@ -277,6 +277,8 @@ func (rl *RL) RunEpisode(ctx context.Context, episode, mode int) (returns float6
 		default:
 		}
 
+		log.Println(s1, a1, r, s2, a2)
+
 		if err = rl.env.RunStep(a1); err != nil {
 			if errors.As(err, &rxError) {
 				continue

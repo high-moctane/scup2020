@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"time"
 
@@ -89,7 +90,7 @@ func (rrp *RealRotatyPendulum) Init() error {
 	for rrp.sPrev == nil {
 		rrp.RunStep([]float64{0})
 	}
-	rrp.initPendulumAngle = rrp.s.ToState(rrp.sPrev)[3]
+	rrp.initPendulumAngle = rrp.s.ToState(rrp.sPrev)[1]
 
 	return nil
 }
@@ -118,7 +119,9 @@ func (rrp *RealRotatyPendulum) Reset() error {
 }
 
 func (rrp *RealRotatyPendulum) State() (s []float64, err error) {
-	return rrp.s.ToState(rrp.sPrev), nil
+	s = rrp.s.ToState(rrp.sPrev)
+	s[1] = relativeAngle(rrp.initPendulumAngle, s[1])
+	return s, nil
 }
 
 func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
@@ -160,6 +163,8 @@ func (rrp *RealRotatyPendulum) RunStep(a []float64) error {
 
 	// Update
 	rrp.s, rrp.sPrev = s, rrp.s
+
+	log.Println(rrp.initPendulumAngle, rrp.s)
 
 	return nil
 }
@@ -250,11 +255,16 @@ func (rrps *RRPState) ToState(prev *RRPState) []float64 {
 	baseVel := rrps.velocity(rrps.BaseAngle, prev.BaseAngle, dt)
 	pendulumVel := rrps.velocity(rrps.PendulumAngle, prev.PendulumAngle, dt)
 
-	return []float64{rrps.BaseAngle, rrps.PendulumAngle, baseVel, pendulumVel}
+	return []float64{
+		rrps.BaseAngle,
+		rrps.PendulumAngle,
+		baseVel,
+		pendulumVel,
+	}
 }
 
 func (*RRPState) velocity(cur, prev float64, dt time.Duration) float64 {
-	return (cur - prev) / dt.Seconds()
+	return relativeAngle(cur, prev) / dt.Seconds()
 }
 
 const RRPEncodedReceiveDataLen = 14
